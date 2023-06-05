@@ -7,8 +7,90 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
+  id        Int             @id @default(autoincrement())
+  email     String          @unique
   name      String?
+  answers   Answer[]
+  result    CubeResult[]
+  statistic CubeStatistic[]
+  createdAt DateTime        @default(now())
+
+  @@index([email])
+}
+
+model Quiz {
+  id        Int             @id @default(autoincrement())
+  title     String
+  link      String
+  notes     String
+  questions Question[]
+  result    CubeResult[]
+  statistic CubeStatistic[]
+  createdAt DateTime        @default(now())
+
+  @@index([link])
+}
+
+model Question {
+  id        Int             @id @default(autoincrement())
+  quizId    Int
+  title     String
+  notes     String
+  quiz      Quiz            @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  options   Option[]
+  answers   Answer[]
+  statistic CubeStatistic[]
+  createdAt DateTime        @default(now())
+}
+
+model Option {
+  id         Int             @id @default(autoincrement())
+  questionId Int
+  title      String
+  notes      String
+  correct    Int
+  answers    Answer[]
+  statistic  CubeStatistic[]
+  question   Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  createdAt  DateTime        @default(now())
+}
+
+model Answer {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  questionId Int
+  optionId   Int
+  correct    Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  option     Option   @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
+
+model CubeResult {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  quizId    Int
+  correct   Int
+  incorrect Int
+  total     Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+}
+
+model CubeStatistic {
+  id         Int       @id @default(autoincrement())
+  quizId     Int?
+  userId     Int?
+  questionId Int?
+  optionId   Int?
+  correct    Int
+  incorrect  Int
+  total      Int
+  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz       Quiz?     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  question   Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  option     Option?   @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
 }
