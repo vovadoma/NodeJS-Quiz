@@ -22,7 +22,7 @@ model Quiz {
   id        Int             @id @default(autoincrement())
   title     String
   link      String
-  notes     String
+  notes     String?
   questions Question[]
   result    CubeResult[]
   statistic CubeStatistic[]
@@ -35,7 +35,7 @@ model Question {
   id        Int             @id @default(autoincrement())
   quizId    Int
   title     String
-  notes     String
+  notes     String?
   quiz      Quiz            @relation(fields: [quizId], references: [id], onDelete: Cascade)
   options   Option[]
   answers   Answer[]
@@ -47,7 +47,7 @@ model Option {
   id         Int             @id @default(autoincrement())
   questionId Int
   title      String
-  notes      String
+  options    String?
   correct    Int
   answers    Answer[]
   statistic  CubeStatistic[]
