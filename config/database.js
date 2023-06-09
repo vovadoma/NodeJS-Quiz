@@ -3,5 +3,6 @@
   port: 5432,
   database: 'quiz',
   user: 'postgres',
+  schema: 'public',
   password: 'postgres',
 });
