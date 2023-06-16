@@ -7,5 +7,6 @@
   validate: (data) => {
     // validate
     // how send errors
+    // throw class errors, to log, to json
   }
 });
