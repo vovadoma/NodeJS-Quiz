@@ -4,7 +4,7 @@
   properties: {
     id: { 'type': 'integer' },
     name: { 'type': 'string' },
-    email: { 'type': 'email' },
+    email: { 'type': 'integer' },
   },
   'required': ['id', 'name', 'email']
 });
