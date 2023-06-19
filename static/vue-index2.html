@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vue.js Example with API Integration</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #000;
+            color: #0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #app {
+            text-align: left;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            font-size: 16px;
+            margin-bottom: 5px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        li:before {
+            content: 'C:>';
+            position: absolute;
+            top: 0;
+            left: -35px;
+        }
+
+        a {
+            color: #0f0;
+            text-decoration: none;
+        }
+
+        form {
+            margin-top: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 5px;
+        }
+
+        .form-group button {
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <h1>User List</h1>
+    <ul>
+        <li v-for="user in users" :key="user.id" @click="selectUser(user)">
+            {{ user.id }}. {{ user.name }} - {{ user.email }}
+        </li>
+    </ul>
+
+    <form @submit.prevent="saveUser">
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <input type="text" id="name" v-model="user.name" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" v-model="user.email" required>
+        </div>
+        <div class="form-group">
+            <button type="submit">Save</button>
+        </div>
+    </form>
+</div>
+
+<script>
+  const transport = {};
+
+  let callId = 1;
+
+  transport.http = (url, version = '') => (structure) => {
+    const api = {};
+    const services = Object.keys(structure);
+    for (const name of services) {
+      api[name] = {};
+      const service = structure[name];
+      const methods = Object.keys(service);
+      for (const methodName of methods) {
+        api[name][methodName] = (args) =>
+          new Promise((resolve, reject) => {
+            const id = callId++;
+            const method = (version ? (version + '/') : '') + name + '/' + methodName;
+            const packet = { type: 'call', id, method, args };
+            fetch(url + '/api', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(packet),
+            }).then((res) => {
+              if (res.status === 200) resolve(res.json());
+              else reject(new Error(`Status Code: ${res.status}`));
+            });
+          });
+      }
+    }
+    return Promise.resolve(api);
+  };
+
+  const scaffold = (url, version = '') => {
+    const protocol = url.startsWith('ws:') ? 'ws' : 'http';
+    return transport[protocol](url, version);
+  };
+
+  new Vue({
+    el: '#app',
+    data: {
+      users: [],
+      user: {
+        id: null,
+        name: '',
+        email: '',
+      },
+    },
+    async mounted() {
+      const api = await scaffold('http://localhost:8001', 'v1')({
+        user: {
+          list: {},
+          create: ['data'],
+          update: ['id', 'data'],
+        },
+      });
+      const response = await api.user.list({});
+      this.users = response.result.data;
+    },
+    methods: {
+      async saveUser() {
+        if (this.user.id) {
+          // Update existing user
+          await api.user.update({ id: this.user.id, data: this.user });
+        } else {
+          // Create new user
+          await api.user.create({ data: this.user });
+        }
+        // Clear form fields
+        this.user.id = null;
+        this.user.name = '';
+        this.user.email = '';
+        // Refresh user list
+        const response = await api.user.list({});
+        this.users = response.result.data;
+      },
+      selectUser(user) {
+        this.user.id = user.id;
+        this.user.name = user.name;
+        this.user.email = user.email;
+      },
+    },
+  });
+</script>
+</body>
+</html>
